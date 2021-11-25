@@ -1,0 +1,6 @@
+# docker volumns
+/docker/data
+
+# IDE settings
+/.idea/
+
