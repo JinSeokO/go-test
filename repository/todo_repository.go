@@ -11,7 +11,7 @@ type TodoRepository interface {
 	WithTrx(trx *sql.Tx) TodoRepository
 	Insert(title string, content string) (int64, error)
 	FindOne(id int64) (*model.TodoModel, error)
-	FindAll() ([]model.TodoModel, error)
+	FindAll(limit int, offset int) ([]model.TodoModel, error)
 }
 
 type todoRepository struct {
@@ -24,7 +24,6 @@ func NewTodoRepository(db *sql.DB) TodoRepository {
 
 func (todoRepo todoRepository) WithTrx(trx *sql.Tx) TodoRepository {
 	todoRepo.db = trx
-
 	return todoRepo
 }
 
@@ -64,15 +63,20 @@ func (todoRepo todoRepository) FindOne(id int64) (*model.TodoModel, error) {
 	return &tm, nil
 }
 
-func (todoRepo todoRepository) FindAll() ([]model.TodoModel, error) {
+func (todoRepo todoRepository) FindAll(limit int, offset int) ([]model.TodoModel, error) {
 	var todos []model.TodoModel
 
 	query := `
 		SELECT id, title, content, created_at, updated_at
 		FROM todo
+		LIMIT ? OFFSET ?
 	`
+	var params = []interface{}{
+		limit, offset,
+	}
 
-	rows, err := todoRepo.db.Query(query)
+	rows, err := todoRepo.db.Query(query, params...)
+
 	if err != nil {
 		return nil, err
 	}

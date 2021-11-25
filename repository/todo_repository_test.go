@@ -48,7 +48,7 @@ func Test_todoRepository_FindAll(t *testing.T) {
 		log.Fatal(err)
 	}
 	todoRepo := todoRepository{db: db}.WithTrx(begin)
-	todoModes, err := todoRepo.FindAll()
+	todoModes, err := todoRepo.FindAll(5, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func Test_todoRepository_FindAll(t *testing.T) {
 			todoRepo := todoRepository{
 				db: tt.fields.db,
 			}
-			got, err := todoRepo.FindAll()
+			got, err := todoRepo.FindAll(5, 0)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FindAll() error = %v, wantErr %v", err, tt.wantErr)
@@ -115,7 +115,7 @@ func Test_todoRepository_FindOne(t *testing.T) {
 func Test_todoRepository_Insert(t *testing.T) {
 
 	type args struct {
-		title string
+		title   string
 		content string
 	}
 
@@ -127,11 +127,10 @@ func Test_todoRepository_Insert(t *testing.T) {
 	todoRepo := NewTodoRepository(db)
 	todoRepoWithTrx := todoRepo.WithTrx(trx)
 
-
 	tests := []struct {
-		name    string
-		args    args
-		expect    args
+		name   string
+		args   args
+		expect args
 	}{
 		{"testcase1", args{"test case title1", "test case content1"}, args{"test case title1", "test case content1"}},
 		{"testcase1", args{"test case title2", "test case content2"}, args{"test case title2", "test case content2"}},
