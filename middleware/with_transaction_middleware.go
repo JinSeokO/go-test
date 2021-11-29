@@ -15,7 +15,6 @@ func WithTrxMiddleWare(db *sql.DB, o *sql.TxOptions) func(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
 		}
-
 		defer func() {
 			if r := recover(); r != nil {
 				trx.Rollback()

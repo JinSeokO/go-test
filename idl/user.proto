@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+option go_package = "idl/api";
+
+message User {
+  int32 id = 1;
+  int32 name = 2;
+}

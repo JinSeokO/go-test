@@ -10,7 +10,12 @@ type TodoService interface {
 	WithTrx(trx *sql.Tx) TodoService
 	GetTodos(limit, offset int) ([]model.TodoModel, error)
 	CreateTodo(title, content string) (int64, error)
-	GetTodo(int64) (*model.TodoModel, error)
+	GetTodoById(int64) (*model.TodoModel, error)
+	GetTodoByTitleOrLikeComment(title string, content string) (*model.TodoModel, error)
+}
+
+func (ts todoService) GetTodoByTitleOrLikeComment(title string, content string) (*model.TodoModel, error) {
+	return ts.todoRepository.FindByTitleOrLikeContent(title, content)
 }
 
 func NewTodoService(tr repository.TodoRepository) TodoService {
@@ -34,6 +39,6 @@ func (ts todoService) CreateTodo(title, content string) (int64, error) {
 	return ts.todoRepository.Insert(title, content)
 }
 
-func (ts todoService) GetTodo(id int64) (*model.TodoModel, error) {
+func (ts todoService) GetTodoById(id int64) (*model.TodoModel, error) {
 	return ts.todoRepository.FindOne(id)
 }

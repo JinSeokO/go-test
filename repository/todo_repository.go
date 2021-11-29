@@ -12,6 +12,7 @@ type TodoRepository interface {
 	Insert(title string, content string) (int64, error)
 	FindOne(id int64) (*model.TodoModel, error)
 	FindAll(limit int, offset int) ([]model.TodoModel, error)
+	FindByTitleOrLikeContent(title string, content string) (*model.TodoModel, error)
 }
 
 type todoRepository struct {
@@ -22,17 +23,17 @@ func NewTodoRepository(db *sql.DB) TodoRepository {
 	return todoRepository{db: db}
 }
 
-func (todoRepo todoRepository) WithTrx(trx *sql.Tx) TodoRepository {
-	todoRepo.db = trx
-	return todoRepo
+func (tr todoRepository) WithTrx(trx *sql.Tx) TodoRepository {
+	tr.db = trx
+	return tr
 }
 
-func (todoRepo todoRepository) Insert(title string, content string) (int64, error) {
+func (tr todoRepository) Insert(title string, content string) (int64, error) {
 	query := `INSERT INTO todo (title, content)
 		VALUES (?, ?)
 	`
 
-	result, err := todoRepo.db.Exec(query, title, content)
+	result, err := tr.db.Exec(query, title, content)
 
 	if err != nil {
 		return 0, fmt.Errorf("sql error on todoRepository.insert : %v", err)
@@ -41,7 +42,7 @@ func (todoRepo todoRepository) Insert(title string, content string) (int64, erro
 	return result.LastInsertId()
 }
 
-func (todoRepo todoRepository) FindOne(id int64) (*model.TodoModel, error) {
+func (tr todoRepository) FindOne(id int64) (*model.TodoModel, error) {
 	var tm model.TodoModel
 
 	query := `SELECT id,
@@ -52,7 +53,7 @@ func (todoRepo todoRepository) FindOne(id int64) (*model.TodoModel, error) {
 			  FROM todo
 			  WHERE id = ?`
 
-	if err := todoRepo.db.QueryRow(query, id).Scan(&tm.Id, &tm.Title, &tm.Content, &tm.CreatedAt, &tm.UpdatedAt); err != nil {
+	if err := tr.db.QueryRow(query, id).Scan(&tm.Id, &tm.Title, &tm.Content, &tm.CreatedAt, &tm.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -63,7 +64,7 @@ func (todoRepo todoRepository) FindOne(id int64) (*model.TodoModel, error) {
 	return &tm, nil
 }
 
-func (todoRepo todoRepository) FindAll(limit int, offset int) ([]model.TodoModel, error) {
+func (tr todoRepository) FindAll(limit int, offset int) ([]model.TodoModel, error) {
 	var todos []model.TodoModel
 
 	query := `
@@ -75,7 +76,7 @@ func (todoRepo todoRepository) FindAll(limit int, offset int) ([]model.TodoModel
 		limit, offset,
 	}
 
-	rows, err := todoRepo.db.Query(query, params...)
+	rows, err := tr.db.Query(query, params...)
 
 	if err != nil {
 		return nil, err
@@ -93,4 +94,29 @@ func (todoRepo todoRepository) FindAll(limit int, offset int) ([]model.TodoModel
 	}
 
 	return todos, nil
+}
+
+func (tr todoRepository) FindByTitleOrLikeContent(title string, content string) (*model.TodoModel, error) {
+	tm := new(model.TodoModel)
+
+	//language=MySQL
+	query := `
+		SELECT id,
+		       title,
+		       content,
+		       created_at,
+		       updated_at
+		FROM "golang-test"."todo"
+		WHERE title = ?
+		   OR "content" LIKE ?
+	`
+
+	row := tr.db.QueryRow(query, title, fmt.Sprintf("%%%s%%", content))
+
+	err := row.Scan(tm.Id, tm.Title, tm.Content, tm.CreatedAt, tm.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return tm, nil
 }
